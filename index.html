@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex,nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>ガイアナビ無視の検証</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Zen+Kaku+Gothic+New:wght@700;900&display=swap">
+<style>
+/* レイアウト: 1 カラムの読み物。冒頭に結論、そのあと「問い → 方法 1 → 方法 2 → G 数ごとの損得 → 照合 → 残り」。表とグラフだけ横スクロール可。 */
+:root{
+  --bg:#f6f6f2; --surface:#fcfcfb; --ink:#14181f; --ink2:#4b5160; --muted:#868a93;
+  --line:#dcdcd4; --head:#27364d; --head-ink:#ffffff; --band:#eef0f3; --gold:#a8842c;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --grid:#e1e0d9; --axis:#c3c2b7;
+  --font-d:"Zen Kaku Gothic New","Noto Sans JP","Yu Gothic","Hiragino Sans",system-ui,sans-serif;
+  --font-b:"Noto Sans JP","Yu Gothic","Hiragino Sans",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#101214; --surface:#1a1a19; --ink:#eeeeea; --ink2:#c0c2c8; --muted:#8b8e96;
+  --line:#33363b; --head:#2b3a52; --head-ink:#f3f4f6; --band:#22262c; --gold:#d0aa4e;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --grid:#2c2c2a; --axis:#44464a; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#101214; --surface:#1a1a19; --ink:#eeeeea; --ink2:#c0c2c8; --muted:#8b8e96;
+  --line:#33363b; --head:#2b3a52; --head-ink:#f3f4f6; --band:#22262c; --gold:#d0aa4e;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --grid:#2c2c2a; --axis:#44464a; color-scheme:dark }
+body{background:var(--bg);color:var(--ink);font-family:var(--font-b);font-size:16px;line-height:1.85}
+.wrap{max-width:760px;margin:0 auto;padding-block:28px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:40px}
+header{display:flex;flex-direction:column;gap:10px;border-bottom:3px solid var(--gold);padding-bottom:18px}
+.eyebrow{font-size:13px;color:var(--ink2);letter-spacing:.06em}
+h1{font-family:var(--font-d);font-weight:900;font-size:clamp(26px,6vw,36px);line-height:1.3;margin:0;text-wrap:balance}
+.lead{margin:0;color:var(--ink2);font-size:15px}
+section{display:flex;flex-direction:column;gap:14px;min-width:0}
+h2{font-family:var(--font-d);font-weight:700;font-size:22px;line-height:1.4;margin:0;text-wrap:balance}
+h3{font-family:var(--font-d);font-weight:700;font-size:17px;margin:8px 0 0}
+p{margin:0}
+ul{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:6px}
+.note{font-size:14px;color:var(--ink2)}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14.5px;font-variant-numeric:tabular-nums}
+th,td{padding:9px 12px;text-align:center;border-bottom:1px solid var(--line);white-space:nowrap}
+th{background:var(--head);color:var(--head-ink);font-weight:500;font-size:13.5px}
+td:first-child,th:first-child{text-align:left}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:nth-child(even) td{background:var(--band)}
+td.wrapc,th.wrapc{white-space:normal;text-align:left;min-width:13em}
+tr.total td{font-weight:700}
+.answer{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:18px 18px 8px;display:flex;flex-direction:column;gap:12px}
+.answer h2{font-size:19px}
+.eq{background:var(--band);border-radius:6px;padding:12px 14px;font-weight:500}
+.chart{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px 10px 8px;display:flex;flex-direction:column;gap:6px}
+.chart h3{margin:0 6px;font-size:15.5px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin:0 6px;font-size:13px;color:var(--ink2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:14px;height:3px;border-radius:2px;display:inline-block}
+.sw.dash{height:0;border-top:2px dashed var(--muted);border-radius:0}
+.plot{position:relative;overflow-x:auto}
+.plot svg{display:block;width:100%;min-width:560px;height:auto}
+.tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px 10px;font-size:12.5px;line-height:1.6;box-shadow:0 2px 10px rgba(0,0,0,.12);white-space:nowrap;font-variant-numeric:tabular-nums}
+.tip b{font-weight:700}
+.tip i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}
+details{border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:10px 14px}
+summary{cursor:pointer;font-weight:500}
+details ul{margin-top:10px;font-size:14.5px}
+a{color:inherit;text-underline-offset:3px}
+a:focus-visible,summary:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+footer{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:14px}
+
+:root{--fol:#b7d3f6;--set2:#e3eefb;--edge:#eceef1}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--fol:#1c4f8f;--set2:#1f3350;--edge:#2a2e35} }
+:root[data-theme="dark"]{--fol:#1c4f8f;--set2:#1f3350;--edge:#2a2e35}
+table.mx td{white-space:normal;min-width:4.6em;font-size:13.5px;line-height:1.4}
+table.mx td:first-child{white-space:nowrap}
+table.mx tbody tr:nth-child(even) td{background:transparent}
+table.mx tbody td.f{background:var(--fol)}
+table.mx tbody td.s{background:var(--set2);font-size:12px}
+table.mx tbody td.e{background:var(--edge);font-size:12px}
+table.mx tbody td.i{color:var(--muted)}
+.lg{width:16px;height:12px;border:1px solid var(--line);border-radius:2px;display:inline-block}
+.lg.f{background:var(--fol)}.lg.s{background:var(--set2)}.lg.e{background:var(--edge)}.lg.i{background:var(--surface)}
+table.wrap1 td:first-child{white-space:normal}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">L ミリオンゴッド -神々の軌跡- ／ 2026-11-15 時点の整理</div>
+  <h1>ガイアナビ無視の検証</h1>
+  <p class="lead">ガイアナビを全部無視する打ち方は、従う打ち方より得なのか。ここまでに確かめたことと、まだ決まっていないことをまとめます。</p>
+</header>
+
+<section class="answer">
+  <h2>いまの結論</h2>
+  <p>ガイアナビが出たら、その時点でリプレイが何回続いているかと、前回の AT からの G 数で決めるのがいちばん得、という計算結果です。</p>
+  <div class="tw"><table>
+    <thead><tr><th>ガイアナビが出た時点のリプレイの連続</th><th class="wrapc">どうするか</th></tr></thead>
+    <tbody>
+      <tr><td>0 回(続いていない)</td><td class="wrapc">無視</td></tr>
+      <tr><td>1 回</td><td class="wrapc">ほぼ無視。設定 2 の試算値のときだけ、浅い G 数で従う</td></tr>
+      <tr><td>2 回以上</td><td class="wrapc">従う。ただし約 750〜1,150G まで(状況で違う)</td></tr>
+      <tr><td>連続に関係なく 1,200G 以降</td><td class="wrapc">無視</td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li>常に従う打ち方がいちばん悪い結果でした。前回 1 セットの 37G から当たるまで打つと、常に従うが −69 枚、常に無視が +10 枚、連続中だけ従うが +20 枚です(設定 1 の試算値)。</li>
+    <li>無視しても当たりはなくならず、遅れるだけです。無視の損は余分に回す G 数の投資だけで、15 枚の得の方が大きくなります。</li>
+    <li>状況ごとの表は「天井からさかのぼる計算」の節にあります。</li>
+    <li>公開の解析値とホールデータからの計算で、実戦で確かめたものではありません。</li>
+  </ul>
+</section>
+
+<section>
+  <h2>何を確かめたいか</h2>
+  <p>打ち方を 2 つに分けます。A はガイアナビに従う打ち方、B はガイアナビを全部無視する打ち方です。ホールデータ(店の台ごとの当選履歴)は全部 A とみなします。</p>
+  <p>出したい結論は「常に A が得」「G 数によって入れ替わる」「常に B が得」のどれかです。まず確かめるのは、「常に B が得」を棄却できるか、つまり従った方が得な場面があるかです。</p>
+  <h3>ガイアナビとは</h3>
+  <div class="tw"><table>
+    <thead><tr><th></th><th>押し順</th><th>従うと成立する役</th><th>払い出し</th></tr></thead>
+    <tbody>
+      <tr><td>押し順ナビ</td><td>右からとは限らない</td><td>15 枚ベル</td><td>15 枚</td></tr>
+      <tr><td>ガイアナビ</td><td>必ず右から</td><td>ガイアベル</td><td>1 枚</td></tr>
+    </tbody>
+  </table></div>
+  <p>ガイアナビは通常時に約 38G に 1 回出ます(公表値 1/37.6)。従うか無視するかで、次のように変わります。</p>
+  <div class="tw"><table>
+    <thead><tr><th></th><th class="wrapc">従う(右から押す)</th><th class="wrapc">無視する(左から押す)</th></tr></thead>
+    <tbody>
+      <tr><td>払い出し</td><td class="wrapc">1 枚</td><td class="wrapc">15 枚(下段に黄 7 が揃う)</td></tr>
+      <tr><td>ガイアステージ</td><td class="wrapc">規定回数に届くと移行を抽選。AT に当たりやすい状態で、ここからの AT は獲得が多い</td><td class="wrapc">抽選されない</td></tr>
+      <tr><td>リプ連・ベル連</td><td class="wrapc">リプレイにもベルにも数えられ、連続をつなぐ。3 連以上で AT を抽選、5 連以上は必ず当選</td><td class="wrapc">つなぎにならない</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>方法 1 ／ 結果だけで比べる</h2>
+  <p>B で打った実戦の ROI を、同じ条件から A で打った場合の期待と比べる方法です。ROI は「1 + 収支 ÷ 総投入枚数」で、100% を超えるとプラスです。</p>
+  <h3>手元の 57 件</h3>
+  <div class="tw"><table>
+    <thead><tr><th>打ち出しの状態</th><th>件数</th><th>A の期待</th><th>A の偶然の幅(95%)</th><th>B の実績</th></tr></thead>
+    <tbody>
+      <tr><td>リセ(朝イチ)</td><td>25</td><td>114.4%</td><td>89.9〜148.1%</td><td>118.0%</td></tr>
+      <tr><td>赤7後</td><td>8</td><td>108.6%</td><td>72.1〜174.4%</td><td>141.4%</td></tr>
+      <tr><td>単発後</td><td>10</td><td>107.4%</td><td>76.7〜162.8%</td><td>131.2%</td></tr>
+      <tr><td>切断後</td><td>9</td><td>107.4%</td><td>74.0〜165.7%</td><td>150.8%</td></tr>
+      <tr><td>天井後</td><td>5</td><td>112.9%</td><td>69.7〜202.2%</td><td>90.2%</td></tr>
+      <tr class="total"><td>全体</td><td>57</td><td>111.1%</td><td>93.2〜133.1%</td><td>128.6%</td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li>全体の収支は B が +30,166 枚、A の期待が +9,870 枚(偶然の幅 −6,072〜+29,674 枚)です。</li>
+    <li>p 値(差がないのに偶然でこれ以上の差が出る確率)は、ROI で 5.6%、収支で 2.3% です。境目で、差があるともないとも言い切れません。</li>
+    <li>リセの 25 件は、リセットされていない台が混ざっている疑いがあります。比較として信頼できるのはリセ以外の 32 件です。</li>
+  </ul>
+  <h3>何件あれば言えるか</h3>
+  <p>取り終えたときに出ていた差が「偶然ではない」と言える最小の件数です。1 件は、着席から当たった AT が終わるまでの 1 回分です。</p>
+  <div class="tw"><table>
+    <thead><tr><th>出た ROI の差</th><th>95% で言える件数</th><th>99% で言える件数</th></tr></thead>
+    <tbody>
+      <tr><td>20%</td><td>約 70</td><td>約 120</td></tr>
+      <tr><td>10%</td><td>約 270</td><td>約 470</td></tr>
+      <tr><td>5%</td><td>約 1,100</td><td>約 1,900</td></tr>
+      <tr><td>2%</td><td>約 6,800</td><td>約 12,000</td></tr>
+      <tr><td>1%</td><td>約 27,000</td><td>約 47,000</td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li>差が数 % なら、手で集められる件数では届きません。</li>
+    <li>57 件を見て「よさそうだから続ける」と決めた場合、57 件を含めたまま同じ基準で読むと甘くなります。新しく取る分だけで判定するのが筋です。件数と基準は取り始める前に決めます。</li>
+  </ul>
+</section>
+
+<section>
+  <h2>方法 2 ／ 部品に分ける</h2>
+  <p>無視すると、得と損が同時に起きます。この 2 つを別々に出して引き算します。</p>
+  <div class="eq">無視の損得 = メダルの減りが遅くなる得 − 当たりにくくなる損</div>
+  <div class="tw"><table>
+    <thead><tr><th>部品</th><th class="wrapc">中身</th><th class="wrapc">分かったこと</th></tr></thead>
+    <tbody>
+      <tr><td>① 得</td><td class="wrapc">無視すると毎回 15 枚出る(従うと 1 枚)</td><td class="wrapc">1 回あたり +14 枚、100G で約 37 枚。57 件のうちリセ以外の実測と一致</td></tr>
+      <tr><td>② 失う当選の数</td><td class="wrapc">ガイアベルがきっかけの当選がなくなる</td><td class="wrapc">公開の解析値で試算すると、設定 1 で約 2,150G に 1 回、設定 2 で約 1,590G に 1 回。ホールの当選率に対して約 20〜27%</td></tr>
+      <tr><td>③ 当たり 1 回の価値</td><td class="wrapc">当たったときの獲得 − 当たらず打ち続けた先の収支</td><td class="wrapc">37G 直後で約 540〜760 枚。G 数が進むほど下がり、1,200〜1,250G で 0 を割る</td></tr>
+    </tbody>
+  </table></div>
+  <h3>② の内訳(公開値での試算)</h3>
+  <div class="tw"><table>
+    <thead><tr><th>きっかけ</th><th>設定 1</th><th>設定 2</th></tr></thead>
+    <tbody>
+      <tr><td>ガイアステージ経由</td><td>初当りの 16.8%</td><td>13.3%</td></tr>
+      <tr><td>リプ連・ベル連のうちガイアベルで増えた分</td><td>8.0%</td><td>13.1%</td></tr>
+      <tr class="total"><td>合計</td><td>24.9%</td><td>26.4%</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">割合は各設定の公表の初当り確率(設定 1 は 1/533、設定 2 は 1/420)に対するものです。57 件の実測では、天井手前の当選が A の期待より 18% 少ない結果でした(幅は 39% 減〜6% 増)。</p>
+  <h3>③ の見積もりの直し(赤7 から始まる当選を除く)</h3>
+  <p>無視しても、赤7 が揃って始まる当選はなくなりません。なくなるのはそれ以外の当選です。赤7 から始まる当選は獲得が大きいので、これを含めた平均で「失う当選の価値」を出すと高く見積もりすぎます。そこで ③ は、赤7 から始まる当選を除いた獲得で出し直しました。</p>
+  <div class="tw"><table>
+    <thead><tr><th>前回の状態</th><th>赤7 始まりの割合</th><th>赤7 始まりの獲得</th><th>それ以外の獲得</th><th>③ 直す前 → 直した後</th></tr></thead>
+    <tbody>
+      <tr><td>前回 1 セット</td><td>2.1%</td><td>1,402 枚</td><td>562 枚</td><td>649 → 634</td></tr>
+      <tr><td>前回 4 セット以上</td><td>5.8%</td><td>1,610 枚</td><td>791 枚</td><td>799 → 764</td></tr>
+      <tr><td>赤7後</td><td>8.2%</td><td>1,527 枚</td><td>903 枚</td><td>816 → 764</td></tr>
+      <tr><td>天井後</td><td>7.7%</td><td>1,480 枚</td><td>815 枚</td><td>723 → 673</td></tr>
+      <tr><td>朝イチ</td><td>5.8%</td><td>1,544 枚</td><td>647 枚</td><td>586 → 539</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">割合と獲得は当選 G 数 38〜199G、③ は 37G 直後の値です。赤7 の当選が多い状態ほど下げ幅が大きく、2〜8% 下がりました。以下の表とグラフは直した後の値です。</p>
+</section>
+
+<section>
+  <h2>G 数ごとの損得</h2>
+  <p class="note">この節は、当たらなかった先の収支を「従い続けた場合」で置いた最初の計算です。あとの「天井からさかのぼる計算」で置き方を直しており、結論はそちらの値が正しいものです。考え方の流れとして残しています。</p>
+  <p>③ の「当たり 1 回の価値」が高いほど、当たりにくくなる損が重くなります。下のグラフの点線は、損得が釣り合う高さです。上の 2 本は「常に従う」と「常に無視」が釣り合う高さ(設定 1・設定 2 の試算値)で、線がこれより上なら常に従う方が得です。いちばん下の 1 本は「連続中だけ従う」と「常に無視」が釣り合う高さで、線がこれより上なら連続中だけ従う方が得です。</p>
+  <div class="chart">
+    <h3>当たり 1 回の価値(枚)と、釣り合う高さ</h3>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--s2)"></i>赤7後</span>
+      <span><i class="sw" style="background:var(--s1)"></i>前回 1 セット</span>
+      <span><i class="sw" style="background:var(--s3)"></i>朝イチ</span>
+      <span><i class="sw dash"></i>釣り合う高さ</span>
+    </div>
+    <div class="plot" id="plot"></div>
+  </div>
+  <div class="tw"><table>
+    <thead><tr><th>G 数</th><th>前回 1 セット</th><th>前回 4 セット以上</th><th>赤7後</th><th>天井後</th><th>朝イチ</th></tr></thead>
+    <tbody>
+      <tr><td>37</td><td>634</td><td>764</td><td>764</td><td>673</td><td>539</td></tr>
+      <tr><td>200</td><td>596</td><td>670</td><td>701</td><td>667</td><td>494</td></tr>
+      <tr><td>400</td><td>531</td><td>541</td><td>581</td><td>605</td><td>365</td></tr>
+      <tr><td>600</td><td>456</td><td>473</td><td>472</td><td>480</td><td>348</td></tr>
+      <tr><td>800</td><td>351</td><td>388</td><td>418</td><td>372</td><td>235</td></tr>
+      <tr><td>1,000</td><td>289</td><td>289</td><td>366</td><td>397</td><td>338</td></tr>
+      <tr><td>1,200</td><td>76</td><td>18</td><td>32</td><td>−3</td><td>76</td></tr>
+      <tr><td>1,300</td><td>−77</td><td>−96</td><td>−170</td><td>−147</td><td>−105</td></tr>
+      <tr><td>1,400</td><td>−264</td><td>−257</td><td>−288</td><td>−452</td><td>−177</td></tr>
+    </tbody>
+  </table></div>
+  <h3>常に従う場合と常に無視する場合の差(100G あたりの枚数)</h3>
+  <p class="note">プラスなら常に従うが得、マイナスなら常に無視が得です。</p>
+  <div class="tw"><table>
+    <thead><tr><th>G 数</th><th>前回 1 セット<br>設定 1 の値</th><th>前回 1 セット<br>設定 2 の値</th><th>赤7後<br>設定 1 の値</th><th>赤7後<br>設定 2 の値</th></tr></thead>
+    <tbody>
+      <tr><td>37</td><td>−8</td><td>+3</td><td>−2</td><td>+11</td></tr>
+      <tr><td>200</td><td>−9</td><td>0</td><td>−5</td><td>+7</td></tr>
+      <tr><td>400</td><td>−12</td><td>−4</td><td>−10</td><td>−1</td></tr>
+      <tr><td>600</td><td>−16</td><td>−9</td><td>−15</td><td>−8</td></tr>
+      <tr><td>1,000</td><td>−24</td><td>−19</td><td>−20</td><td>−14</td></tr>
+      <tr><td>1,400</td><td>−50</td><td>−54</td><td>−51</td><td>−55</td></tr>
+    </tbody>
+  </table></div>
+  <p>37G 直後で常に従うと常に無視が釣り合うのは、無視で当選率が 22〜25% 下がる場合です。手元の数字は試算が約 20〜27%、実測が 18% で、どれも分かれ目の前後です。この 2 つだけの比べ方では決着がつきません。</p>
+</section>
+
+<section>
+  <h2>連続中だけ従う打ち方</h2>
+  <p class="note">この節は、当たらなかった先の収支を「従い続けた場合」で置いた最初の計算です。あとの「天井からさかのぼる計算」で置き方を直しており、結論はそちらの値が正しいものです。考え方の流れとして残しています。</p>
+  <p>ガイアベルの重みは、出たときの状況で大きく変わります。リプレイかベルが続いている最中なら、ガイアベル 1 回で連続が伸び、当選に直結します。4 連から 5 連になれば必ず当選し、3 連から 4 連でも 33〜50% で当選します。連続していないときのガイアベルは、当選にほとんど結びつきません。</p>
+  <p>そこで、ガイアナビが出た時点の連続回数で従うかどうかを決める打ち方を試算しました。数字は「常に無視」を基準にした 100G あたりの差(枚)で、当たり 1 回の価値を 650 枚と置いた場合です。</p>
+  <div class="tw"><table>
+    <thead><tr><th>打ち方</th><th>ガイアナビに従う割合</th><th>設定 1 の値</th><th>設定 2 の値</th></tr></thead>
+    <tbody>
+      <tr><td>常に従う</td><td>100%</td><td>−6.7</td><td>+1.3</td></tr>
+      <tr><td>1 連以上で従う</td><td>22.6%</td><td>+2.8</td><td>+10.6</td></tr>
+      <tr><td>2 連以上で従う</td><td>2.7%</td><td>+4.1</td><td>+7.3</td></tr>
+      <tr><td>3 連以上で従う</td><td>0.3%</td><td>+2.1</td><td>+2.3</td></tr>
+      <tr><td>常に無視</td><td>0%</td><td>0</td><td>0</td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li>条件付きの打ち方は、どちらの設定の値でも、常に従う・常に無視の両方を上回ります。当たり 1 回の価値を 500 枚や 800 枚に変えても同じ向きでした。</li>
+    <li>2 連以上で従う打ち方は、ガイアナビの 2.7% にしか従いません。手放す払い出しは 100G で約 1 枚で、それと引き換えに、リプ連・ベル連で増える当選の約半分を拾えます。</li>
+    <li>2 連以上で従う打ち方が常に無視に勝てるのは、当たり 1 回の価値が約 130 枚を超える間です。G 数でいうと約 1,150G までで、その先は連続中でも無視が得になります。</li>
+    <li>この打ち方では、ガイアステージにはほとんど入らなくなります。その分の損は上の数字に入っています。</li>
+  </ul>
+</section>
+
+<section>
+  <h2>天井からさかのぼる計算</h2>
+  <p>ここまでの計算は、当たらなかった先の収支を「従い続けた場合」(ホールデータの実績)で置いていました。しかし無視する打ち方を選ぶなら、その先も同じ打ち方で打つはずです。そこで、必ず当たる天井から 1G ずつ手前へさかのぼり、各 G 数で「その先を最善に打った場合の収支」を使って、従うか無視かを決め直しました。</p>
+  <p>最善に打った先の収支は、従い続けた先の収支より、どの G 数でも約 90〜100 枚良くなります。その分「いま当たること」の重みは下がるので、ここまでの節は従う側をひいき目に見ていたことになります。</p>
+  <h3>37G から当たるまで打った収支(前回 1 セット、枚)</h3>
+  <div class="tw"><table>
+    <thead><tr><th>打ち方</th><th>設定 1 の値</th><th>設定 2 の値</th></tr></thead>
+    <tbody>
+      <tr><td>常に従う</td><td>−69</td><td>−70</td></tr>
+      <tr><td>常に無視</td><td>+10</td><td>−22</td></tr>
+      <tr><td>2 連以上で従う</td><td>+20</td><td>−1</td></tr>
+      <tr><td>最善(下の表のとおりに打つ)</td><td>+21</td><td>+6</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">常に従うの値は、ホールデータから直接出した値(−68 枚)と一致します。</p>
+  <h3>常に従うと常に無視の差の内訳(前回 1 セット、設定 1 の値)</h3>
+  <div class="tw"><table class="wrap1">
+    <thead><tr><th>項目</th><th>変化</th></tr></thead>
+    <tbody>
+      <tr><td>無視でもらう 14 枚の合計(当たるまで約 14 回)</td><td>+193 枚</td></tr>
+      <tr><td>後で当たるときの獲得の増加(632 枚 → 661 枚)</td><td>+29 枚</td></tr>
+      <tr><td>当たりが遅れるぶんの投資の増加(432G → 520G)</td><td>−143 枚</td></tr>
+      <tr class="total"><td>合計</td><td>+79 枚</td></tr>
+    </tbody>
+  </table></div>
+  <h3>状況別の表の見方</h3>
+  <p>縦は前回の AT からの G 数、横はガイアナビが出た時点でリプレイが続いている回数です。設定 1 の値と設定 2 の値の 2 通りを 1 つの表に重ねています。「約○G まで従う」は、その帯の途中に境目があるマスです。</p>
+  <div class="legend"><span><i class="lg f"></i>従う</span><span><i class="lg s"></i>設定 2 の値なら従う</span><span><i class="lg e"></i>途中まで従う</span><span><i class="lg i"></i>無視</span></div>
+  <h3>前回 1 セット</h3>
+  <p class="note">37G から最善に打った収支: +21 枚(設定 1 の値)/ +6 枚(設定 2 の値)</p>
+  <div class="tw"><table class="mx">
+    <thead><tr><th>G 数</th><th>0 回</th><th>1 回</th><th>2 回</th><th>3 回</th><th>4 回</th></tr></thead>
+    <tbody>
+      <tr><td>37〜199G</td><td class="i">無視</td><td class="s">設定 2 の値なら従う</td><td class="f">従う</td><td class="f">従う</td><td class="f">従う</td></tr>
+      <tr><td>200〜399G</td><td class="i">無視</td><td class="s">設定 2 の値なら従う</td><td class="f">従う</td><td class="f">従う</td><td class="f">従う</td></tr>
+      <tr><td>400〜599G</td><td class="i">無視</td><td class="s">設定 2 の値なら従う</td><td class="f">従う</td><td class="f">従う</td><td class="f">従う</td></tr>
+      <tr><td>600〜799G</td><td class="i">無視</td><td class="e">約 650G まで従う</td><td class="f">従う</td><td class="f">従う</td><td class="f">従う</td></tr>
+      <tr><td>800〜999G</td><td class="i">無視</td><td class="i">無視</td><td class="e">約 1,000G まで従う</td><td class="f">従う</td><td class="f">従う</td></tr>
+      <tr><td>1,000〜1,199G</td><td class="i">無視</td><td class="i">無視</td><td class="e">約 1,100G まで従う</td><td class="e">約 1,150G まで従う</td><td class="e">約 1,150G まで従う</td></tr>
+      <tr><td>1,200G〜天井</td><td class="i">無視</td><td class="i">無視</td><td class="i">無視</td><td class="i">無視</td><td class="i">無視</td></tr>
+    </tbody>
+  </table></div>
+  <h3>前回 2 セット</h3>
+  <p class="note">37G から最善に打った収支: +47 枚(設定 1 の値)/ +32 枚(設定 2 の値)</p>
+  <div class="tw"><table class="mx">
+    <thead><tr><th>G 数</th><th>0 回</th><th>1 回</th><th>2 回</th><th>3 回</th><th>4 回</th></tr></thead>
+    <tbody>
+      <tr><td>37〜199G</td><td class="i">無視</td><td class="s">設定 2 の値なら従う</td><td class="f">従う</td><td class="f">従う</td><td class="f">従う</td></tr>
+      <tr><td>200〜399G</td><td class="i">無視</td><td class="s">設定 2 の値なら従う</td><td class="f">従う</td><td class="f">従う</td><td class="f">従う</td></tr>
+      <tr><td>400〜599G</td><td class="i">無視</td><td class="e">約 550G まで従う</td><td class="f">従う</td><td class="f">従う</td><td class="f">従う</td></tr>
+      <tr><td>600〜799G</td><td class="i">無視</td><td class="i">無視</td><td class="f">従う</td><td class="f">従う</td><td class="f">従う</td></tr>
+      <tr><td>800〜999G</td><td class="i">無視</td><td class="i">無視</td><td class="e">約 1,000G まで従う</td><td class="f">従う</td><td class="f">従う</td></tr>
+      <tr><td>1,000〜1,199G</td><td class="i">無視</td><td class="i">無視</td><td class="e">約 1,050G まで従う</td><td class="e">約 1,150G まで従う</td><td class="e">約 1,150G まで従う</td></tr>
+      <tr><td>1,200G〜天井</td><td class="i">無視</td><td class="i">無視</td><td class="i">無視</td><td class="i">無視</td><td class="i">無視</td></tr>
+    </tbody>
+  </table></div>
+  <h3>前回 3 セット</h3>
+  <p class="note">37G から最善に打った収支: +128 枚(設定 1 の値)/ +115 枚(設定 2 の値)</p>
+  <div class="tw"><table class="mx">
+    <thead><tr><th>G 数</th><th>0 回</th><th>1 回</th><th>2 回</th><th>3 回</th><th>4 回</th></tr></thead>
+    <tbody>
+      <tr><td>37〜199G</td><td class="i">無視</td><td class="s">設定 2 の値なら従う</td><td class="f">従う</td><td class="f">従う</td><td class="f">従う</td></tr>
+      <tr><td>200〜399G</td><td class="i">無視</td><td class="s">設定 2 の値なら従う</td><td class="f">従う</td><td class="f">従う</td><td class="f">従う</td></tr>
+      <tr><td>400〜599G</td><td class="i">無視</td><td class="e">約 400G まで従う</td><td class="f">従う</td><td class="f">従う</td><td class="f">従う</td></tr>
+      <tr><td>600〜799G</td><td class="i">無視</td><td class="i">無視</td><td class="f">従う</td><td class="f">従う</td><td class="f">従う</td></tr>
+      <tr><td>800〜999G</td><td class="i">無視</td><td class="i">無視</td><td class="e">約 1,000G まで従う</td><td class="f">従う</td><td class="f">従う</td></tr>
+      <tr><td>1,000〜1,199G</td><td class="i">無視</td><td class="i">無視</td><td class="i">無視</td><td class="e">約 1,100G まで従う</td><td class="e">約 1,100G まで従う</td></tr>
+      <tr><td>1,200G〜天井</td><td class="i">無視</td><td class="i">無視</td><td class="i">無視</td><td class="i">無視</td><td class="i">無視</td></tr>
+    </tbody>
+  </table></div>
+  <h3>前回 4 セット以上</h3>
+  <p class="note">37G から最善に打った収支: +197 枚(設定 1 の値)/ +183 枚(設定 2 の値)</p>
+  <div class="tw"><table class="mx">
+    <thead><tr><th>G 数</th><th>0 回</th><th>1 回</th><th>2 回</th><th>3 回</th><th>4 回</th></tr></thead>
+    <tbody>
+      <tr><td>37〜199G</td><td class="i">無視</td><td class="s">設定 2 の値なら従う</td><td class="f">従う</td><td class="f">従う</td><td class="f">従う</td></tr>
+      <tr><td>200〜399G</td><td class="i">無視</td><td class="e">約 300G まで従う</td><td class="f">従う</td><td class="f">従う</td><td class="f">従う</td></tr>
+      <tr><td>400〜599G</td><td class="i">無視</td><td class="i">無視</td><td class="f">従う</td><td class="f">従う</td><td class="f">従う</td></tr>
+      <tr><td>600〜799G</td><td class="i">無視</td><td class="i">無視</td><td class="f">従う</td><td class="f">従う</td><td class="f">従う</td></tr>
+      <tr><td>800〜999G</td><td class="i">無視</td><td class="i">無視</td><td class="e">約 1,000G まで従う</td><td class="f">従う</td><td class="f">従う</td></tr>
+      <tr><td>1,000〜1,199G</td><td class="i">無視</td><td class="i">無視</td><td class="e">約 1,050G まで従う</td><td class="e">約 1,100G まで従う</td><td class="e">約 1,100G まで従う</td></tr>
+      <tr><td>1,200G〜天井</td><td class="i">無視</td><td class="i">無視</td><td class="i">無視</td><td class="i">無視</td><td class="i">無視</td></tr>
+    </tbody>
+  </table></div>
+  <h3>赤7後</h3>
+  <p class="note">37G から最善に打った収支: +292 枚(設定 1 の値)/ +282 枚(設定 2 の値)</p>
+  <div class="tw"><table class="mx">
+    <thead><tr><th>G 数</th><th>0 回</th><th>1 回</th><th>2 回</th><th>3 回</th><th>4 回</th></tr></thead>
+    <tbody>
+      <tr><td>37〜199G</td><td class="i">無視</td><td class="i">無視</td><td class="f">従う</td><td class="f">従う</td><td class="f">従う</td></tr>
+      <tr><td>200〜399G</td><td class="i">無視</td><td class="i">無視</td><td class="f">従う</td><td class="f">従う</td><td class="f">従う</td></tr>
+      <tr><td>400〜599G</td><td class="i">無視</td><td class="i">無視</td><td class="f">従う</td><td class="f">従う</td><td class="f">従う</td></tr>
+      <tr><td>600〜799G</td><td class="i">無視</td><td class="i">無視</td><td class="e">約 750G まで従う</td><td class="f">従う</td><td class="f">従う</td></tr>
+      <tr><td>800〜999G</td><td class="i">無視</td><td class="i">無視</td><td class="e">約 850G まで従う</td><td class="e">約 1,000G まで従う</td><td class="e">約 1,000G まで従う</td></tr>
+      <tr><td>1,000〜1,199G</td><td class="i">無視</td><td class="i">無視</td><td class="i">無視</td><td class="e">約 1,100G まで従う</td><td class="e">約 1,100G まで従う</td></tr>
+      <tr><td>1,200G〜天井</td><td class="i">無視</td><td class="i">無視</td><td class="i">無視</td><td class="i">無視</td><td class="i">無視</td></tr>
+    </tbody>
+  </table></div>
+  <h3>天井後</h3>
+  <p class="note">37G から最善に打った収支: +287 枚(設定 1 の値)/ +279 枚(設定 2 の値)</p>
+  <div class="tw"><table class="mx">
+    <thead><tr><th>G 数</th><th>0 回</th><th>1 回</th><th>2 回</th><th>3 回</th><th>4 回</th></tr></thead>
+    <tbody>
+      <tr><td>37〜199G</td><td class="i">無視</td><td class="i">無視</td><td class="f">従う</td><td class="f">従う</td><td class="f">従う</td></tr>
+      <tr><td>200〜399G</td><td class="i">無視</td><td class="i">無視</td><td class="f">従う</td><td class="f">従う</td><td class="f">従う</td></tr>
+      <tr><td>400〜599G</td><td class="i">無視</td><td class="i">無視</td><td class="f">従う</td><td class="f">従う</td><td class="f">従う</td></tr>
+      <tr><td>600〜799G</td><td class="i">無視</td><td class="i">無視</td><td class="e">約 750G まで従う</td><td class="f">従う</td><td class="f">従う</td></tr>
+      <tr><td>800〜999G</td><td class="i">無視</td><td class="i">無視</td><td class="i">無視</td><td class="e">約 850G まで従う</td><td class="e">約 850G まで従う</td></tr>
+      <tr><td>1,000〜1,199G</td><td class="i">無視</td><td class="i">無視</td><td class="i">無視</td><td class="i">無視</td><td class="i">無視</td></tr>
+      <tr><td>1,200G〜天井</td><td class="i">無視</td><td class="i">無視</td><td class="i">無視</td><td class="i">無視</td><td class="i">無視</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">ガイアベル経由の当選の獲得は、前回の状態によらず前回 1 セットの水準と置いています。赤7後などの獲得の高さは、ガイアベル以外のきっかけの当選が作っている可能性が高いためです。前回の状態と同じ水準で置くと、赤7後で従う範囲はこれより広くなります(2 回連続中で約 1,100G まで)。</p>
+</section>
+
+<section>
+  <h2>公開情報との照合</h2>
+  <p>最初に聞いた説明を、公開されている解析値と照らしました。4 つのサイトで数値は一致していました。</p>
+  <div class="tw"><table>
+    <thead><tr><th class="wrapc">最初の説明</th><th class="wrapc">公開情報</th><th>結果</th></tr></thead>
+    <tbody>
+      <tr><td class="wrapc">ガイアナビは右から、ガイアベルは 1 枚</td><td class="wrapc">右ナビ、1 枚、確率 1/37.6</td><td>一致</td></tr>
+      <tr><td class="wrapc">ガイアベルでガイアステージを抽選</td><td class="wrapc">ガイアベルが規定回数に届いたときに抽選</td><td>一致</td></tr>
+      <tr><td class="wrapc">リプ連・ベル連で AT を抽選</td><td class="wrapc">3 連以上で抽選、5 連以上は必ず当選</td><td>一致</td></tr>
+      <tr><td class="wrapc">ガイアステージ経由の AT は獲得が多い</td><td class="wrapc">上位の特化ゾーンに入る率が 15.0%(ステージ外は 1.2%、設定 1)</td><td>整合</td></tr>
+      <tr><td class="wrapc">リプ連・ベル連経由の AT は獲得が少ない</td><td class="wrapc">継続の種類がほぼ最下位になる</td><td>整合</td></tr>
+      <tr><td class="wrapc">無視すると 1/4 で 15 枚</td><td class="wrapc">AT 中は「左から止めると 15 枚が揃う」</td><td>食い違い</td></tr>
+      <tr><td class="wrapc">無視に内部的な冷遇の可能性</td><td class="wrapc">無視へのペナルティの記載は見つからず</td><td>不明</td></tr>
+    </tbody>
+  </table></div>
+  <p>食い違った 1 点は「毎回 15 枚」に置き直しました。ただし公開情報の記述は AT 中のもので、通常時についての明記はありません。リセ以外の実測と計算が一致していることが支えです。</p>
+</section>
+
+<section>
+  <h2>残っていること</h2>
+  <ul>
+    <li><b>リプ連・ベル連経由の当選の獲得</b>：平均より低いはずなので、連続中だけ従う打ち方が勝てる G 数の上限は約 1,150G より手前になります。どこまで下がるかは獲得の実測が要ります。</li>
+    <li><b>履歴の数え方</b>：ハズレや取りこぼしで連続が途切れる、無視したガイアベルは黄 7 として履歴に入る、と置いています。実機の履歴表示で確かめる必要があります。</li>
+    <li><b>ガイアベル経由の当選の獲得が、前回の状態で変わるか</b>:赤7後や天井後の獲得の高さを引き継ぐなら従う範囲が広がり、引き継がないなら狭まります。経路別の獲得の実測が要ります。</li>
+    <li><b>設定 3〜6 のリプ連当選率</b>：未公開です。高設定ほど無視の損が増える向きです。</li>
+    <li><b>失う当選の質</b>：ガイアステージ経由は獲得が多いので、件数以上に損が大きい可能性があります。</li>
+    <li><b>冷遇の有無</b>：57 件では追加の冷遇は見えませんが、幅が広く、ないとは言えません。</li>
+    <li><b>無視の払い出し</b>：無視打ちでガイアナビの回数と 15 枚の回数を数えれば、100 回で確かめられます。</li>
+    <li><b>リセ 25 件の信ぴょう性</b>：リセット台かどうかの確認待ちです。</li>
+  </ul>
+</section>
+
+<details>
+  <summary>算出条件</summary>
+  <ul>
+    <li>ホールデータは 2026-05-07 までの並べ直し済みデータ。獲得の空欄は 0 枚、連数は AT のセット数で数えています。</li>
+    <li>A の期待は、B の各サンプルと同じ状態・同じ打ち出し G 数から当たるまで打った場合の平均です。コイン持ちは 50 枚あたり朝イチ 34.1G、それ以外 30.8G。</li>
+    <li>偶然の幅は、同じ条件のホールデータから同じ件数を無作為に抜き出して合計する作業を 20,000 回繰り返した 95% の範囲です。店や設定の違いは入っていません。</li>
+    <li>37G 以内から打ち出した 5 件は、37G を抜けた後の条件で比べています。</li>
+    <li>必要件数は「(係数 × 1 件の ROI のばらつき ÷ 出た差)の 2 乗」。係数は 95% で 1.96、99% で 2.576、ばらつきは約 84%(概算)。</li>
+    <li>② の試算は、役の確率と公開の解析値で通常時を 600 万 G 模擬した結果です。履歴はハズレや取りこぼしで途切れる、無視したガイアベルは黄 7 揃いとして履歴に入る、通常時のモード抽選と天井は A と B で同じ、と置いています。冷遇は入れていません。</li>
+    <li>③ は、従う打ち方で打ち続ける前提で、当たった AT の終わりまでを数えています。天井後の次の初当りが強い分は入れていません。前回 1〜4 セット以上は、前回終了時の差枚 +1,000 超を除いています。</li>
+    <li>③ の獲得は、赤7 から始まる当選を除いた平均です。赤7 始まりは「最初の行が赤7」または「最初の行が 42 枚以下で次の行が赤7」の当選としています。</li>
+    <li>無視の得は 14 枚 ÷ 37.6 = 1G あたり 0.372 枚。常に従うと常に無視が釣り合う高さは、これを ② の失う当選の数で割った値です(設定 1 で 798 枚、設定 2 で 593 枚)。</li>
+    <li>連続中だけ従う打ち方は、ガイアナビが出た時点の青 7 連(リプレイ)と黄 7 連(ベル)の長い方が決めた回数以上なら従う、として ② と同じ前提で 300 万 G 模擬しました。2 連以上で従う打ち方が常に無視と釣り合う高さは、設定 1 の値で約 130 枚、設定 2 の値で約 80 枚です。</li>
+    <li>天井からさかのぼる計算は、状態を(G 数、リプレイの連続 0〜4 回)として、天井から 1G ずつ手前へ「従う」と「無視」の大きい方を選んでいます。ガイアステージの分は従ったガイアベル 1 回あたり平均 1.2% の当選として入れ、黄 7 の連続は省いています。ガイアベル以外の当選の確率と獲得は、全体がホールデータの実績と合うように逆算しています。</li>
+  </ul>
+</details>
+
+<footer>
+  公開情報の出どころ：
+  <a href="https://chonborista.com/slot/universal-slot/252303/">ちょんぼりすた</a>、
+  <a href="https://1geki.jp/slot/l_milliongod_kiseki/45/">一撃(小役履歴)</a>、
+  <a href="https://1geki.jp/slot/l_milliongod_kiseki/47/">一撃(ガイアステージ)</a>、
+  <a href="https://nana-press.com/kaiseki/machine/1112/35721/">なな徹(ガイアステージ)</a>、
+  <a href="https://nana-press.com/kaiseki/machine/1112/35720/">なな徹(小役履歴)</a>、
+  <a href="https://p-town.dmm.com/machines/4961">P-TOWN</a>
+</footer>
+</div>
+
+<script>
+(function(){
+  var G=[37,100,200,300,400,500,600,700,800,900,1000,1100,1200,1300,1400,1450];
+  var S=[
+    {name:"赤7後",c:"var(--s2)",v:[764,730,701,655,581,563,472,496,418,344,366,191,32,-170,-288,-264],dy:-8},
+    {name:"前回 1 セット",c:"var(--s1)",v:[634,618,596,572,531,494,456,418,351,302,289,175,76,-77,-264,-371],dy:-8},
+    {name:"朝イチ",c:"var(--s3)",v:[539,516,494,439,365,423,348,335,235,209,338,110,76,-105,-177,-165],dy:16}
+  ];
+  var REF=[{y:798,t:"常に従う = 常に無視(設定 1 の値)798"},{y:593,t:"常に従う = 常に無視(設定 2 の値)593"},{y:130,t:"連続中だけ従う = 常に無視 約 130"}];
+  var W=720,H=380,L=52,R=14,T=14,B=38,X0=0,X1=1500,Y0=-600,Y1=900;
+  function x(g){return L+(g-X0)/(X1-X0)*(W-L-R)}
+  function y(v){return T+(Y1-v)/(Y1-Y0)*(H-T-B)}
+  var ns="http://www.w3.org/2000/svg";
+  function el(n,a,t){var e=document.createElementNS(ns,n);for(var k in a)e.setAttribute(k,a[k]);if(t!=null)e.textContent=t;return e}
+  var svg=el("svg",{viewBox:"0 0 "+W+" "+H,role:"img","aria-label":"当たり 1 回の価値を G 数ごとに示した折れ線グラフ。数値は下の表と同じ"});
+  var txt="font-family:var(--font-b);font-size:11.5px;fill:var(--muted)";
+  [-600,-300,0,300,600,900].forEach(function(v){
+    svg.appendChild(el("line",{x1:L,x2:W-R,y1:y(v),y2:y(v),stroke:v===0?"var(--axis)":"var(--grid)","stroke-width":v===0?1.4:1}));
+    svg.appendChild(el("text",{x:L-8,y:y(v)+4,"text-anchor":"end",style:txt},(v<0?"−":"")+Math.abs(v)));
+  });
+  [0,250,500,750,1000,1250,1500].forEach(function(g){
+    svg.appendChild(el("text",{x:x(g),y:H-B+18,"text-anchor":g===1500?"end":"middle",style:txt},g.toLocaleString()+(g===1500?"G":"")));
+  });
+  svg.appendChild(el("text",{x:L,y:H-4,style:txt},"前回の AT からの G 数"));
+  REF.forEach(function(r){
+    svg.appendChild(el("line",{x1:L,x2:W-R,y1:y(r.y),y2:y(r.y),stroke:"var(--muted)","stroke-width":1.4,"stroke-dasharray":"6 5"}));
+    var left=r.y<400;
+    svg.appendChild(el("text",{x:left?L+6:W-R-4,y:y(r.y)-6,"text-anchor":left?"start":"end",style:"font-family:var(--font-b);font-size:11.5px;fill:var(--ink2)"},r.t));
+  });
+  S.forEach(function(s){
+    var d=s.v.map(function(v,i){return (i?"L":"M")+x(G[i]).toFixed(1)+" "+y(v).toFixed(1)}).join(" ");
+    svg.appendChild(el("path",{d:d,fill:"none",stroke:s.c,"stroke-width":2,"stroke-linejoin":"round","stroke-linecap":"round"}));
+  });
+  var lab=[{s:S[0],i:2,dy:-10},{s:S[1],i:4,dy:19},{s:S[2],i:4,dy:19}];
+  lab.forEach(function(o){
+    svg.appendChild(el("text",{x:x(G[o.i]),y:y(o.s.v[o.i])+o.dy,"text-anchor":"middle",style:"font-family:var(--font-b);font-size:12px;font-weight:500;fill:var(--ink);paint-order:stroke;stroke:var(--surface);stroke-width:3px"},o.s.name));
+  });
+  var cross=el("line",{y1:T,y2:H-B,stroke:"var(--axis)","stroke-width":1,visibility:"hidden"});
+  svg.appendChild(cross);
+  var dots=S.map(function(s){var c=el("circle",{r:4.5,fill:s.c,stroke:"var(--surface)","stroke-width":2,visibility:"hidden"});svg.appendChild(c);return c});
+  var hit=el("rect",{x:L,y:T,width:W-L-R,height:H-T-B,fill:"transparent"});
+  svg.appendChild(hit);
+  var plot=document.getElementById("plot");
+  plot.appendChild(svg);
+  var tip=document.createElement("div");tip.className="tip";tip.hidden=true;plot.appendChild(tip);
+  function show(ev){
+    var r=svg.getBoundingClientRect(),px=(ev.clientX-r.left)/r.width*W,bi=0,bd=1e9;
+    G.forEach(function(g,i){var d=Math.abs(x(g)-px);if(d<bd){bd=d;bi=i}});
+    cross.setAttribute("x1",x(G[bi]));cross.setAttribute("x2",x(G[bi]));cross.setAttribute("visibility","visible");
+    var h="<b>"+G[bi].toLocaleString()+"G</b>";
+    S.forEach(function(s,k){dots[k].setAttribute("cx",x(G[bi]));dots[k].setAttribute("cy",y(s.v[bi]));dots[k].setAttribute("visibility","visible");
+      var v=s.v[bi];h+="<br><i style=\"background:"+s.c+"\"></i>"+s.name+" <b>"+(v<0?"−":"")+Math.abs(v).toLocaleString()+" 枚</b>"});
+    tip.innerHTML=h;tip.hidden=false;
+    var pr=plot.getBoundingClientRect(),tx=ev.clientX-pr.left+plot.scrollLeft+14,tw=tip.offsetWidth;
+    if(tx+tw>plot.scrollLeft+pr.width-4)tx=ev.clientX-pr.left+plot.scrollLeft-tw-14;
+    tip.style.left=Math.max(4,tx)+"px";tip.style.top="18px";
+  }
+  function hide(){tip.hidden=true;cross.setAttribute("visibility","hidden");dots.forEach(function(c){c.setAttribute("visibility","hidden")})}
+  hit.addEventListener("pointermove",show);hit.addEventListener("pointerdown",show);hit.addEventListener("pointerleave",hide);
+})();
+</script>
+
+</body>
+</html>
